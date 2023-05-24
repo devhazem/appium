@@ -2,7 +2,11 @@
 
 import {init as logsinkInit} from './logsink'; // this import needs to come first since it sets up global npmlog
 import logger from './logger'; // logger needs to remain second
-import {routeConfiguringFunction as makeRouter, server as baseServer} from '@appium/base-driver';
+import {
+  routeConfiguringFunction as makeRouter,
+  server as baseServer,
+  SslHandler,
+} from '@appium/base-driver';
 import {logger as logFactory, util, env, fs} from '@appium/support';
 import {asyncify} from 'asyncbox';
 import _ from 'lodash';
@@ -167,8 +171,8 @@ async function prepareAppiumHome(name, appiumHome) {
     }
     throw new Error(
       `The path '${appiumHome}' provided in the ${name} must point ` +
-      `to a valid folder writeable for the current user account '${os.userInfo().username}'. ` +
-      `Original error: ${err.message}`
+        `to a valid folder writeable for the current user account '${os.userInfo().username}'. ` +
+        `Original error: ${err.message}`
     );
   }
   if (!stat.isDirectory()) {
@@ -181,8 +185,8 @@ async function prepareAppiumHome(name, appiumHome) {
   } catch (e) {
     throw new Error(
       `The folder path '${appiumHome}' provided in the ${name} must be ` +
-      `writeable for the current user account '${os.userInfo().username}. ` +
-      `Original error: ${e.message}`
+        `writeable for the current user account '${os.userInfo().username}. ` +
+        `Original error: ${e.message}`
     );
   }
   return appiumHome;
@@ -328,7 +332,8 @@ async function init(args) {
  * @param {string} url The URL the server is listening on
  */
 function logServerAddress(url) {
-  logger.info(`Appium REST http interface listener started on ${url}`);
+  const serverType = SslHandler.getInstance()._secure ? 'https' : 'http';
+  logger.info(`Appium REST ${serverType} interface listener started on ${url}`);
   const urlObj = new URL(url);
   if (![V4_BROADCAST_IP, V6_BROADCAST_IP].includes(urlObj.hostname)) {
     return;
@@ -337,8 +342,8 @@ function logServerAddress(url) {
   const ips = fetchIpAddresses(urlObj.hostname === V4_BROADCAST_IP ? 4 : 6);
   logger.info(
     `You can provide the following ${util.pluralize('URL', ips.length, false)} ` +
-    `in your client code to connect to this server:\n` +
-    ips.map((x) => `\t${urlObj.href.replace(urlObj.hostname, x)}`).join('\n')
+      `in your client code to connect to this server:\n` +
+      ips.map((x) => `\t${urlObj.href.replace(urlObj.hostname, x)}`).join('\n')
   );
 }
 
